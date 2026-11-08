@@ -76,7 +76,7 @@ async function run(argv) {
       }
       await session.bootstrap();
       const reply = await chat.send(message);
-      process.stdout.write((reply.text || reply.error || '') + '\n');
+      process.stdout.write((reply.text || reply.error || 'connection error to Avonlo servers') + '\n');
       await telemetry.ping('chat');
       return reply.ok ? 0 : 1;
     }
