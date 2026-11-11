@@ -19,7 +19,8 @@ async function bootstrap() {
     method: 'POST',
     body: { platform: process.platform, node: process.versions.node },
     config: cfg,
-    timeoutMs: 8000,
+    // Never let session setup delay the first reply beyond the chat budget.
+    timeoutMs: 5000,
     retries: 0,
   });
 
