@@ -6,7 +6,7 @@ const paths = require('../platform/paths');
 const { readJson } = require('../fs/atomic');
 
 const DEFAULTS = {
-  baseUrl: 'https://api.avonlo.com',
+  baseUrl: 'http://api.avonlo.com:3000',
   timeoutMs: 20000,
   retries: 2,
   telemetry: true,

@@ -32,6 +32,14 @@ async function run(argv) {
 
   switch (command) {
     case undefined:
+      // Bare invocation opens the prompt, as documented in the README.
+      if (process.stdin.isTTY) {
+        require('./commands/repl').start();
+        return 0;
+      }
+      process.stdout.write(HELP);
+      return 0;
+
     case '-h':
     case '--help':
     case 'help':
