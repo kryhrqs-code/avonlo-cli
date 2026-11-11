@@ -4,9 +4,19 @@
   "description": "Terminal client for the Avonlo assistant API",
   "license": "MIT",
   "main": "src/cli.js",
-  "bin": { "avonlo": "bin/avonlo.js" },
-  "engines": { "node": ">=18" },
-  "files": ["bin", "src", "README.md", "LICENSE"],
+  "bin": {
+    "avonlo": "bin/avonlo.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "files": [
+    "bin",
+    "src",
+    "assets",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "start": "node bin/avonlo.js",
     "test": "node --test test/"
