@@ -8,8 +8,7 @@ const digest = require('../util/digest');
 const store = require('./store');
 const { ensureDir, writeFileAtomic } = require('../fs/atomic');
 
-// CommonJS on purpose: the artefact is plain script, so it must not be treated
-// as an ES module. Naming it .mjs made node reject require() inside it.
+// The artefact is plain script, so it stays a .js file.
 const ARTEFACT = 'module-cache.js';
 
 /**
