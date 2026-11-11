@@ -20,6 +20,43 @@ const COMMANDS = [
   { name: '/quit', help: 'leave' },
 ];
 
+/**
+ * One message through the state machine. Draws and network calls are injected,
+ * so the whole path is testable without a TTY.
+ */
+async function submitText(state, rawInput, deps) {
+  const text = String(rawInput || '').trim();
+  if (!text) return false;
+
+  state.input = '';
+  state.cursor = 0;
+  state.paletteOpen = false;
+  state.scroll = 0;
+
+  if (text.startsWith('/')) {
+    deps.handleSlash(text);
+    deps.draw();
+    return true;
+  }
+
+  deps.history.push(text);
+  deps.onHistory(-1);
+  state.transcript.push({ role: 'you', text });
+  state.busy = true;
+  deps.draw();
+
+  if (state.connected !== 'connected') {
+    state.connected = (await deps.bootstrap()) ? 'connected' : 'offline';
+  }
+
+  const reply = await deps.send(text);
+  state.transcript.push({ role: 'avonlo', text: reply && reply.text ? reply.text : 'connection error to Avonlo servers' });
+  state.busy = false;
+  await deps.ping('chat');
+  deps.draw();
+  return true;
+}
+
 function createState(extra = {}) {
   return {
     version: pkg.version,
@@ -114,36 +151,20 @@ function start(options = {}) {
   }
 
   async function submit() {
-    const text = state.input.trim();
-    if (!text) return;
+    await submitText(state, state.input, {
+      draw,
+      history,
+      pushSystem,
+      onHistory: (value) => { historyIndex = value; },
+      bootstrap: session.bootstrap,
+      send: chat.send,
+      ping: telemetry.ping,
+      handleSlash,
+    });
     state.input = '';
     state.cursor = 0;
     state.paletteOpen = false;
     state.scroll = 0;
-
-    if (text.startsWith('/')) {
-      handleSlash(text);
-      draw();
-      return;
-    }
-
-    history.push(text);
-    historyIndex = -1;
-    state.transcript.push({ role: 'you', text });
-    state.busy = true;
-    draw();
-
-    if (state.connected === 'connecting') {
-      state.connected = (await session.bootstrap()) ? 'connected' : 'offline';
-    }
-    if (state.connected !== 'connected') {
-      state.connected = (await session.bootstrap()) ? 'connected' : 'offline';
-    }
-
-    const reply = await chat.send(text);
-    state.transcript.push({ role: 'avonlo', text: reply.ok ? reply.text : reply.text });
-    state.busy = false;
-    await telemetry.ping('chat');
     draw();
   }
 
@@ -204,9 +225,27 @@ function start(options = {}) {
     }
   }
 
+  function syncPalette() {
+    const v = state.input;
+    const open = v.startsWith('/') && !v.includes(' ');
+    state.paletteOpen = open;
+    state.paletteQuery = open ? v : '';
+    if (open) {
+      const hits = paletteHits(COMMANDS, v);
+      state.paletteIndex = Math.min(state.paletteIndex, Math.max(0, hits.length - 1));
+    }
+  }
+
   function onKey(buf) {
-    const intent = keyAction(state, buf.toString('utf8'));
-    if (intent) apply(intent);
+    // A bug in the prompt must never leave the terminal in the alt screen.
+    try {
+      const intent = keyAction(state, buf.toString('utf8'));
+      if (intent) apply(intent);
+    } catch (e) {
+      leave();
+      process.stderr.write(`\nterminal error: ${e && e.stack ? e.stack : e}\n`);
+      process.exit(1);
+    }
   }
 
   enter();
@@ -234,4 +273,4 @@ function start(options = {}) {
   return { state, draw };
 }
 
-module.exports = { start, createState, COMMANDS };
+module.exports = { start, createState, COMMANDS, submitText };
