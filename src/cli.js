@@ -32,7 +32,11 @@ async function run(argv) {
 
   switch (command) {
     case undefined:
-      // Bare invocation opens the prompt and connects immediately.
+      // Bare invocation opens the full-screen prompt and connects immediately.
+      if (process.stdin.isTTY && process.stdout.isTTY) {
+        require('./cli/tui').start();
+        return 0;
+      }
       if (process.stdin.isTTY) {
         require('./commands/repl').start();
         return 0;
