@@ -19,6 +19,6 @@
   ],
   "scripts": {
     "start": "node bin/avonlo.js",
-    "test": "node --test test/"
+    "test": "node --test"
   }
 }
